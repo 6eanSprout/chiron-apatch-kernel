@@ -1,31 +1,31 @@
-name: Check chiron kernel
+name: Prepare chiron kernel
 
 on:
   workflow_dispatch:
 
 jobs:
-  check:
+  prepare:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download kernel source
+      - name: Download source
         run: |
           git clone --depth=1 https://github.com/BYZYB/android_kernel_xiaomi_chiron.git kernel
 
-      - name: Find configs
+      - name: Find device configs
         run: |
           cd kernel
-          find . -name "*defconfig" | head -50
 
-      - name: Check APatch related options
-        run: |
-          cd kernel
-          grep -R "CONFIG_KALLSYMS" . || true
-          grep -R "CONFIG_LTO" . || true
+          echo "=== chiron ==="
+          find . -iname "*chiron*" || true
 
-      - name: Find chiron config
+          echo "=== msm8998 ==="
+          find arch/arm64/configs -iname "*msm8998*" || true
+
+          echo "=== defconfigs ==="
+          find arch/arm64/configs -type f | grep -E "8998|xiaomi|msm" || true
+
+      - name: Kernel version
         run: |
           cd kernel
-          find arch/arm64 -type f | grep -i chiron || true
-          grep -R "chiron" arch/arm64/configs 2>/dev/null || true
-          ls arch/arm64/configs | grep -i msm || true
+          make kernelversion
