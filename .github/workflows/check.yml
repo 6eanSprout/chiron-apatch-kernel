@@ -22,3 +22,10 @@ jobs:
           cd kernel
           grep -R "CONFIG_KALLSYMS" . || true
           grep -R "CONFIG_LTO" . || true
+
+      - name: Find chiron config
+        run: |
+          cd kernel
+          find arch/arm64 -type f | grep -i chiron || true
+          grep -R "chiron" arch/arm64/configs 2>/dev/null || true
+          ls arch/arm64/configs | grep -i msm || true
