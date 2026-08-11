@@ -8,30 +8,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout kernel
+      - name: Checkout kernel source
         run: |
           git clone --depth=1 https://github.com/BYZYB/android_kernel_xiaomi_chiron.git kernel
+
+      - name: Fix missing KernelSU files
+        run: |
+          cd kernel
+          mkdir -p drivers/kernelsu
+
+          printf 'menu "KernelSU"\nendmenu\n' > drivers/kernelsu/Kconfig
+          printf '' > drivers/kernelsu/Makefile
 
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y bc bison flex libssl-dev build-essential clang lld llvm
+          sudo apt install -y bc bison flex libssl-dev build-essential clang lld llvm gcc-aarch64-linux-gnu
 
       - name: Prepare config
         run: |
           cd kernel
-
           export ARCH=arm64
 
           make O=out chiron_defconfig
 
-          echo "=== Disable problematic optimizations ==="
-
-          scripts/config --disable LTO_CLANG
-          scripts/config --disable LTO_CLANG_THIN
-          scripts/config --disable PGO_CLANG
-          scripts/config --disable BOLT
-          scripts/config --disable MLGO
+          scripts/config --disable LTO_CLANG || true
+          scripts/config --disable LTO_CLANG_THIN || true
+          scripts/config --disable PGO_CLANG || true
+          scripts/config --disable BOLT || true
+          scripts/config --disable MLGO || true
 
           scripts/config --enable KALLSYMS
           scripts/config --enable KALLSYMS_ALL
@@ -43,17 +48,12 @@ jobs:
       - name: Build kernel
         run: |
           cd kernel
-
           export ARCH=arm64
 
-          make O=out \
-          ARCH=arm64 \
-          CROSS_COMPILE=aarch64-linux-gnu- \
-          -j$(nproc)
+          make O=out ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
 
       - name: Upload kernel
         uses: actions/upload-artifact@v4
         with:
           name: chiron-kernel-test
-          path: |
-            kernel/out/arch/arm64/boot/Image*
+          path: kernel/out/arch/arm64/boot/Image*
