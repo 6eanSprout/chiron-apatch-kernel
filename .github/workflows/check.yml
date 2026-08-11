@@ -1,0 +1,24 @@
+name: Check chiron kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download kernel source
+        run: |
+          git clone --depth=1 https://github.com/BYZYB/android_kernel_xiaomi_chiron.git kernel
+
+      - name: Find configs
+        run: |
+          cd kernel
+          find . -name "*defconfig" | head -50
+
+      - name: Check APatch related options
+        run: |
+          cd kernel
+          grep -R "CONFIG_KALLSYMS" . || true
+          grep -R "CONFIG_LTO" . || true
